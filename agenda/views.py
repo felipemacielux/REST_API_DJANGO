@@ -3,9 +3,10 @@ from agenda.models import Agendamento
 from agenda.serializers import AgendamentoSerializer
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 # Create your views here.
-@api_view(http_method_names=['GET', 'PATCH']) # utilizando o recurso da apirest passa a interpretar as views como uma API que retorna em formato json
+@api_view(http_method_names=['GET', 'PATCH', 'DELETE']) # utilizando o recurso da apirest passa a interpretar as views como uma API que retorna em formato json
 def agendamento_detail(request, id):
     if request.method == 'GET': #continua com o processo normal de retornar um agendamento
         obj = get_object_or_404(Agendamento, id=id) # na view será buscado o obejto pelo ID
@@ -26,10 +27,17 @@ def agendamento_detail(request, id):
             obj.save() #servindo para salvar no banco de dados as atualizações dos dados realizadas
             return JsonResponse(v_data, status=200)
         return JsonResponse(serializer.errors, status=400)
+    if request.method == 'DELETE':
+        obj = get_object_or_404(Agendamento, id=id)
+        obj.cancelado = True # para marcar o agendamento como cancelado em vez de deletá-lo
+        obj.delete()
+        obj.cancelado = True
+        return Response(status=204) # status que indica que a resposta não tem um bosy
+    
 @api_view(http_method_names=['GET', 'POST'])
 def agendamento_list(request): #vai servir como consulta / será utilizado también para reutilizar essa função, para que se for utilizado um método GET retorna a listagem, mas se for POST ele cria uma nova instância do objeto
     if request.method == 'GET':
-        qs = Agendamento.objects.all() # Faz com que busque todos os agendamentos 
+        qs = Agendamento.objects.filter(cancelado=False) # Faz com que busque todos os agendamentos 
         serializer = AgendamentoSerializer(qs, many=True) # faz com seja feito uma lista de objetos
         return JsonResponse(serializer.data, safe=False) # para que seja retornado como uma lista e não um simples dicionário precisa ser passado o safe=False 
     if request.method == 'POST':
@@ -46,3 +54,8 @@ def agendamento_list(request): #vai servir como consulta / será utilizado tambi
             )
             return JsonResponse(serializer.data, status=201) # padrão 201 informando que foi criado, siguindo o padrão http created 
         return JsonResponse(serializer.errors, status=400) # padrão 400 informando que houve erro
+    
+
+    # exibir para o admin uma lista de objetos cancelados
+    # ao invés de cancelar o objeto, alterar um atributo (no modelo e nas migrações), salvar o objeto como cancelado = a true
+    # Remova da listagem de agendamentos todos os agendamentos que foram cancelados
