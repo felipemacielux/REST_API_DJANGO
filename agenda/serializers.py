@@ -1,12 +1,18 @@
 from rest_framework import serializers
-from agenda import Agendamento
+from agenda.models import Agendamento
 from datetime import datetime
 from django.utils import timezone 
-class AgendamentoSerializer(serializers.Serializer):
-    data_horario = serializers.DateTimeField()
-    nome_cliente = serializers.CharField(max_length=100)
-    email_cliente = serializers.EmailField()
-    telefone_cliente = serializers.CharField(max_length=20)
+class AgendamentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Agendamento # Apontando para o modelo que será serializado
+        fields = ['id', 'data_horario', 'nome_cliente', 'email_cliente', 'telefone_cliente'] # lista de strings apontando os campos que você deseja colocar no serializer 
+
+#Ocorre o processo de deixar o código sintetizado da forma acima, mas tem o mesmo resultado com que foi criado abaixo
+
+    #data_horario = serializers.DateTimeField()
+    #nome_cliente = serializers.CharField(max_length=100)
+    #email_cliente = serializers.EmailField()
+    #telefone_cliente = serializers.CharField(max_length=20)
 
     def validate_data_horario(self, value): # depois de executar as validações basicas, vai passar o valor corretamente para o campo com o argumento de value da função
         if value < timezone.now(): #timezone tem a relevância de trazer os horários no momento levando em conta os fusohorarios
