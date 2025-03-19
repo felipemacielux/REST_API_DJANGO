@@ -27,17 +27,18 @@ def agendamento_detail(request, id):
         return Response(status=204) # status que indica que a resposta não tem um bosy
     
 @api_view(http_method_names=['GET', 'POST'])
-def agendamento_list(request): #vai servir como consulta / será utilizado también para reutilizar essa função, para que se for utilizado um método GET retorna a listagem, mas se for POST ele cria uma nova instância do objeto
+def agendamento_list(request):
     if request.method == 'GET':
-        qs = Agendamento.objects.filter(cancelado=False) # Faz com que busque todos os agendamentos 
-        serializer = AgendamentoSerializer(qs, many=True) # faz com seja feito uma lista de objetos
-        return JsonResponse(serializer.data, safe=False) # para que seja retornado como uma lista e não um simples dicionário precisa ser passado o safe=False 
+        qs = Agendamento.objects.filter(cancelado=False)
+        serializer = AgendamentoSerializer(qs, many=True)
+        return JsonResponse(serializer.data, safe=False)
     if request.method == 'POST':
         data = request.data
-        # precisa criar um agendamento a partir do meu objeto, uma nova instancia de agendamento
-        serializer = AgendamentoSerializer(data=data) #pega os valores que vierem e verifica se está de acordo com que está explicito no arquivo serializers
-        if serializer.is_valid(): 
-            serializer.save() # Em algum momento de seu fluxo vai chamar a função create no serializers para criar uma nova instancia da classe 
-            return JsonResponse(serializer.data, status=201) # padrão 201 informando que foi criado, siguindo o padrão http created 
-        return JsonResponse(serializer.errors, status=400) # padrão 400 informando que houve erro
+        print("Dados recebidos:", data)  # Depuração
+        serializer = AgendamentoSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        print("Erros de validação:", serializer.errors)  # Depuração
+        return JsonResponse(serializer.errors, status=400)
     

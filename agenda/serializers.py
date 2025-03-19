@@ -1,11 +1,13 @@
 from rest_framework import serializers
 from agenda.models import Agendamento
 from datetime import datetime
-from django.utils import timezone 
+from django.utils import timezone
+from django.utils.timezone import now
+
 class AgendamentoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agendamento # Apontando para o modelo que será serializado
-        fields = ['id', 'data_horario', 'nome_cliente', 'email_cliente', 'telefone_cliente'] # lista de strings apontando os campos que você deseja colocar no serializer 
+        fields = '__all__' # lista de strings apontando os campos que você deseja colocar no serializer 
 
 #Ocorre o processo de deixar o código sintetizado da forma acima, mas tem o mesmo resultado com que foi criado abaixo
 
@@ -14,10 +16,20 @@ class AgendamentoSerializer(serializers.ModelSerializer):
     #email_cliente = serializers.EmailField()
     #telefone_cliente = serializers.CharField(max_length=20)
 
-    def validate_data_horario(self, value): # depois de executar as validações basicas, vai passar o valor corretamente para o campo com o argumento de value da função
-        if value < timezone.now(): #timezone tem a relevância de trazer os horários no momento levando em conta os fusohorarios
-            # Precisando destacar a exceção
-            raise serializers.ValidationError("Agendamento não pode ser feito no passado!") # para comunicar que houve um erro de validação
+    from django.utils import timezone
+
+    def validate_data_horario(self, value):
+        print("Valor recebido para data_horario:", value)  # Depuração
+        print("Data atual (timezone.now()):", timezone.now())  # Depuração
+        
+        # Certifique-se de que o valor é um datetime com fuso horário
+        if not timezone.is_aware(value):
+            value = timezone.make_aware(value)
+        
+        # Comparação apenas da data (ignorando o horário)
+        if value.date() < timezone.now().date():
+            raise serializers.ValidationError("Agendamento não pode ser feito no passado!")
+        
         return value
     # validação objlevel, que diz a respeito do serializer como um todo e não apenas a um campo
     def validate(self, attrs):
