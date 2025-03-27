@@ -1,44 +1,89 @@
+from datetime import datetime
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from agenda.models import Agendamento
 from agenda.serializers import AgendamentoSerializer
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import mixins
+from rest_framework import generics
+from agenda.models import Agendamento
+from agenda.serializers import AgendamentoSerializer
 
-# Create your views here.
-@api_view(http_method_names=['GET', 'PATCH', 'DELETE']) # utilizando o recurso da apirest passa a interpretar as views como uma API que retorna em formato json
+'''@api_view(http_method_names=["GET", "PATCH", "DELETE"])
 def agendamento_detail(request, id):
-    obj = get_object_or_404(Agendamento, id=id) # na view será buscado o obejto pelo ID
-    if request.method == 'GET': #continua com o processo normal de retornar um agendamento
-        # serializer faz com que o objeto seja retornado em formato json
-        serializer = AgendamentoSerializer(obj) #passando o objeto ele vai tentar encontrar por padrão os dados que foram armazenados no arquivo serializers.py
+    obj = get_object_or_404(Agendamento, id=id)
+    if request.method == "GET":
+        serializer = AgendamentoSerializer(obj)
         return JsonResponse(serializer.data)
-    if request.method == 'PATCH': # abre o processo com metodo para editar um agendamento que já existe
-        #Precisando validar os itens do objeto para que sejam atualizados
-        serializer = AgendamentoSerializer(obj, data=request.data, partial = True) #partial serve para nos informar que o serializer aceita updates parciais, apenas alguns campos sejam passados e o obj precisa ser reconhecido com uma instancia no arquivo serializers
+    if request.method == "PATCH":
+        serializer = AgendamentoSerializer(obj, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=200)
         return JsonResponse(serializer.errors, status=400)
-    if request.method == 'DELETE':
-        obj.cancelado = True # para marcar o agendamento como cancelado em vez de deletá-lo
-        obj.delete()
-        obj.cancelado = True
-        return Response(status=204) # status que indica que a resposta não tem um bosy
+    if request.method == "DELETE":
+       obj.delete()
+       return Response(status=204)'''
+
+# Para substituição do código acima para que seja transformado em uma classe ----> Class Based Views
     
-@api_view(http_method_names=['GET', 'POST'])
-def agendamento_list(request):
-    if request.method == 'GET':
-        qs = Agendamento.objects.filter(cancelado=False)
-        serializer = AgendamentoSerializer(qs, many=True)
-        return JsonResponse(serializer.data, safe=False)
-    if request.method == 'POST':
-        data = request.data
-        print("Dados recebidos:", data)  # Depuração
-        serializer = AgendamentoSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(serializer.data, status=201)
-        print("Erros de validação:", serializer.errors)  # Depuração
-        return JsonResponse(serializer.errors, status=400)
+class AgendamentoDetail(
+    generics.RetrieveUpdateDestroyAPIView # Equiavale a cada um dos mixins declarados abaixo
+    #mixins.RetrieveModelMixin, # Retrieve tem a mesma ideia do get/buscar o modelo
+    #mixins.UpdateModelMixin, # Atualização do objeto
+    #mixins.DestroyModelMixin, # Mesma ideia do delete
+    #generics.GenericAPIView,
+    ):
+    queryset = Agendamento.objects.all()
+    serializer_class = AgendamentoSerializer
+    lookup_field = 'id' # Corresponde a utilizar o id ao invés do pk que ficaria na url do agendamento/id, porque sem o lookup deve ser passado como pk
+    # CRUD
+    '''def get (self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+         
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(self, request, *args, **kwargs) # para que seja atualizado os dados de forma parcial
     
+    def put (self, request, *args, **kwargs):
+        return self.update(self, request, *args, **kwargs)
+
+    def delete(self,request, args, **kwargs): 
+        return self.destroy(self, request, *args, **kwargs)
+    '''
+class AgendamentoList(
+    generics.ListCreateAPIView
+    #mixins.ListModelMixin,  adicionar mixin de listagem --> Faz a listagem de algum objeto ou modelo
+    #mixins.CreateModelMixin,  adiconar o mixin de criacao
+    #generics.GenericAPIView, classe generica - lida com funcionalidade geral --> request, serializer e queryset
+): # cria um método com os nomes de cada um dos HTTPS Methods ---> mixin utilizado para que sejam escritos menos códigos
+    
+    #Com a classe dessa forma quero que eu seja direcionado para url: /api/agendamentos/?username=felipeverde
+    
+
+# Utilizando o generics.ListCreateAPIView não precisa ser utilizado os mixins e não precisa usar os argumentos com as funções abaixo
+
+    serializer_class = AgendamentoSerializer # Apenas para passar a classe
+    def get_queryset(self):
+        username = self.request.query_params.get('username', None)
+        queryset = Agendamento.objects.filter(prestador__username=username) # faz a listagem filtrada  dos objetos(filter) --> utilizado o __ para que seja referenciado
+        return queryset #metodo utilizado para que seja chamado o queryset
+    
+
+    #def get(self, request, *args, **kwargs):
+        #return self.list(request, *args, **kwargs) # recebe um request que precisa ser evidenciado com argumentos não nomeados e nomeados, sendo assim a função do self.list é buscar o queryset e serializar
+    #def post(self,request, *args, **kwargs):
+       # return self.create(request, *args, **kwargs) # Criar objetos a partir de um certo modelo que será no caso o Agendamento
+ 
+'''@api_view(http_method_names=["GET"])
+def get_horarios(request):
+    data= request.query_params.get("data")
+    if not data:
+        data = datetime.now().date()
+    else:
+        data = datetime.fromisoformat(data).date()
+    
+    horarios_disponiveis = sorted(list(get_horarios_disponiveis(data)))
+    return JsonResponse(horarios_disponiveis, safe=False)'''

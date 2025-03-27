@@ -1,8 +1,8 @@
 from django.urls import path
-from agenda.views import agendamento_detail
-from agenda.views import agendamento_list
+from agenda.views import AgendamentoList,AgendamentoDetail #get_horarios
 
 urlpatterns = [
-    path('agendamentos/', agendamento_list),
-    path('agendamentos/<int:id>/', agendamento_detail), # primeiro parâmetro é para declarar uma rota e o segundo para declarar a view que será chamada quando a API é acessado
+    path('agendamentos/', AgendamentoList.as_view()), # quando é declarado nas URLS precisa coloca .as_view pois se trata de um função em que colocada aqui não reconheceria
+    path('agendamentos/<int:id>/', AgendamentoDetail.as_view()), # primeiro parâmetro é para declarar uma rota e o segundo para declarar a view que será chamada quando a API é acessado
+    #path('horarios/', get_horarios),
 ]
