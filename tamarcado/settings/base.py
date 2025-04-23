@@ -10,17 +10,23 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
+import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-i(h3h#7ve=(dq(a&i-#ze^xl(qs$plt5+htmitf_h1z(w^f64&'
+SECRET_KEY = os.environ.get('SECRET_KEY') #precisa ficar setado na nossa máquina
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -122,3 +128,37 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+import sys
+
+TESTING = False
+
+LOGGING = {  # DictConfig schema: https://docs.python.org/3/library/logging.config.html#configuration-dictionary-schema
+    'version': 1,  # Versão do schema atual
+    'disable_existing_loggers': False,  # Django possui alguns loggers por padrão (request, ORM, etc.)
+    'formatters': {  # Como o conteúdo do log deve ser exibido/escrito
+        'console': {
+            'format': '%(name)-12s %(levelname)-8s %(message)s'  # -<número>s : espaçamento
+        },
+        'file': {
+            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+        }
+    },
+    'handlers': {  # Classes que sabem manipular o log – console (stdout)/arquivo de texto
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'console'
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'formatter': 'file',
+            'filename': 'app.log'  # Onde o arquivo de log vai ser salvo
+        }
+    },
+    'loggers': {
+        '': {  # '' representa o logger "raíz" (root). Todos "loggers" herdarão dele.
+            'level': 'WARN',
+            'handlers': ['console', 'file']
+        }
+    }
+}
